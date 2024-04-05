@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="usv_hardware">
+    <ros2_control name="usv_hardware" type="system">
+      <!-- 插件信息 -->
+      <hardware>
+        <plugin>usv_hardware/USVHardware</plugin>
+      </hardware>
+
+      <!-- 定义第一个马达的接口 -->
+      <joint name="left_motor">
+        <command_interface name="motor_speed" />
+      </joint>
+
+      <!-- 定义第二个马达的接口 -->
+      <joint name="right_motor">
+        <command_interface name="motor_speed" />
+      </joint>
+
+      <!-- IMU传感器接口 -->
+      <sensor name="MPU6050">
+        <state_interface name="angular_velocity_z"/>
+        <state_interface name="linear_acceleration_x"/>
+        <state_interface name="linear_acceleration_y"/>
+      </sensor>
+
+      <!-- 磁力计接口 -->
+      <sensor name="HMC5883L">
+        <state_interface name="angular_z"/>
+      </sensor>
+    </ros2_control>
+  </xacro:macro>
+</robot>

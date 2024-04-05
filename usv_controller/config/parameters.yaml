@@ -1,0 +1,17 @@
+# generate_parameter_library包配置文件，用于自动声明参数
+usv_controller:
+  steering_sensitivity: {
+    type: int,
+    default_value: 1,
+    description: "控制转弯的灵敏度，需要根据实际情况调试",
+  }
+  motor_speed_ratio: {
+    type: double,
+    default_value: 1.0,
+    description: "两侧马达的转速比率，通过调节使得平稳，为左/右",
+  }
+  pid: {
+    type: double_array_fixed_3,
+    default_value: [0.0, 0.0, 0.0],
+    description: "pid调参数据，顺序即为p i d", 
+  }

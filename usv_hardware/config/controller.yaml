@@ -1,0 +1,17 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 10  # Hz
+
+    usv_controller:
+      type: usv_controller/USVController
+
+    joint_broad:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+usv_controller:
+  ros__parameters:
+    steering_sensitivity: 1  # 控制转弯的灵敏度，需要根据实际情况调试
+    motor_speed_ratio: 1.0  # 两侧马达的转速比率，通过调节使得平稳，为左/右
+    pid: [0.0, 0.0, 0.0]  # pid调参数据，顺序即为p i d
+
+    

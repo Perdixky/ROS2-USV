@@ -1,0 +1,9 @@
+<library path="usv_hardware">
+  <class name="usv_hardware/USVHardware"
+         type="USVHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+    船的硬件抽象层
+    </description>
+  </class>
+</library>

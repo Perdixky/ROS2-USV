@@ -1,0 +1,9 @@
+<library path="usv_controller">
+  <class name="usv_controller/USVController" 
+  type="USVController" 
+  base_class_type="controller_interface::ControllerInterface">
+    <description>
+      无人船的硬件控制器
+    </description>
+  </class>
+</library>

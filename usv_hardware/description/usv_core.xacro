@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="usv_base">
+    <!-- Base Link -->
+    <link name="base_link">
+    </link>
+
+    <!-- base_footprint_joint -->
+    <joint name="base_footprint_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="base_footprint"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Base Footprint -->
+    <link name="base_footprint">
+      <visual>
+        <geometry>
+          <box size="1 1 0.1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="1 1 0.1"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- odom -->
+    <joint name="odom" type="fixed">
+      <parent link="odom"/>
+      <child link="base_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Odom Link -->
+    <link name="odom">
+      <visual>
+        <geometry>
+          <box size="0.1 0.1 0.1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.1 0.1 0.1"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="laser" type="fixed">
+      <parent link="base_footprint"/>
+      <child link="laser"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="laser"></link>
+
+    <!-- Left Motor -->
+    <link name="left_motor">
+      <visual>
+        <geometry>
+          <cylinder length="0.1" radius="0.1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="0.1" radius="0.1"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Right Motor -->
+    <link name="right_motor">
+      <visual>
+        <geometry>
+          <cylinder length="0.1" radius="0.1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="0.1" radius="0.1"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Motor Joints -->
+    <joint name="left_motor_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="left_motor"/>
+      <origin xyz="-0.5 0.15 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="right_motor_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="right_motor"/>
+      <origin xyz="-0.5 0.15 0" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+</robot>
