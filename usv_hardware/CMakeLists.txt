@@ -79,7 +79,7 @@ install(TARGETS usv_hardware
 )
 
 install(FILES usv_hardware.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DESTINATION share
 )
 
 if(BUILD_TESTING)

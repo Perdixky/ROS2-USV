@@ -78,7 +78,7 @@ controller_interface::CallbackReturn USVController::on_configure(const rclcpp_li
         }
     );
 
-    // 初始化imu_publisher和magnetic_field_publisher
+    // 初始化imu_publisher
     imu_publisher__ = get_node()->create_publisher<sensor_msgs::msg::Imu>("imu", rclcpp::SystemDefaultsQoS());
     imu_realtime_publisher_ = std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::Imu>>(imu_publisher__);
     angular_publisher__ = get_node()->create_publisher<nav_msgs::msg::Odometry>("angle", rclcpp::SystemDefaultsQoS());

@@ -3,6 +3,10 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
 from launch_ros.actions import Node, LifecycleNode
 from launch_ros.substitutions import FindPackageShare
+"""from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.launch_description_sources import AnyLaunchDescriptionSource"""
+
 
 def generate_launch_description():
     # Declare arguments
@@ -21,7 +25,7 @@ def generate_launch_description():
             "ydlidar_x3.yaml", 
         ]
     )
-    
+
     ydlidar_node = LifecycleNode(
         package='ydlidar_ros2_driver',
         executable='ydlidar_ros2_driver_node',
@@ -120,6 +124,7 @@ def generate_launch_description():
         parameters=[twist_mux_params],
     )
     
+    
     nodes = [
         twist_mux,
         ekf_node,
@@ -130,4 +135,27 @@ def generate_launch_description():
         ydlidar_node,
     ]
 
-    return LaunchDescription(declared_arguments + nodes)
+    """# 包含navigation_launch.py
+    include_navigation_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('usv_hardware'), 'bringup', 'navigation_launch.py'
+            ])
+        )
+    )
+    
+    rrt2D_launch = PathJoinSubstitution([
+        FindPackageShare("usv_hardware"),
+        "bringup",
+        "rrt2Dlaunch.xml",  # 确保这个文件存在并且包含了正确的SLAM配置
+    ])
+
+    # 包含RRT_2D.py
+    include_RRT_2D_launch = IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(rrt2D_launch)
+    )"""
+
+    return LaunchDescription(
+        declared_arguments + nodes
+    )
+
