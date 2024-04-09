@@ -47,10 +47,10 @@ hardware_interface::CallbackReturn USVHardware::on_init(const hardware_interface
 hardware_interface::CallbackReturn USVHardware::on_configure(const rclcpp_lifecycle::State &)
 {
     subscriber_ = node_->create_subscription<std_msgs::msg::Float64MultiArray>(
-        "command",
+        "state",
         rclcpp::SystemDefaultsQoS(),
         [this](const std_msgs::msg::Float64MultiArray::SharedPtr msg) -> void{
-            RCLCPP_DEBUG(this->node_->get_logger(), "接收到command！");
+            RCLCPP_DEBUG(this->node_->get_logger(), "接收到state！");
             msg_ptr_box.set(std::move(msg));  // 在不违反实时约束的情况下，在实时和非实时环境中安全地交换数据
         }
     );
