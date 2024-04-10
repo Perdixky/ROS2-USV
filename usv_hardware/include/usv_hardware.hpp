@@ -42,8 +42,14 @@ namespace simple
     };
 
     struct Odometry{
-        double angular_z;
+        double angle_z;
     };
+
+    struct Teleop{
+        bool is_teleoperated;
+        unsigned char speed;
+        unsigned char angular_speed;
+    }
 }
 
 class USVHardware : public hardware_interface::SystemInterface  // 无node成员
@@ -62,7 +68,9 @@ private:
     // 下面三个基本数据都有初始化，数据传递时按照此定义的顺序进行
     simple::Imu imu_msg_;  // sensor_msgs::msg::Imu类型的数据，存储IMU的存储
     simple::Odometry odometry_msg_;  // sensor_msgs::msg::MagneticFeild类型数据，存储磁力计数据
+    simple::Teleop teleop_msg_;
     std::vector<double> motor_speeds_{ std::nan("1") };   // 电机的转动速度（相对值，-100~100）
+
 
     realtime_tools::RealtimeBox<std_msgs::msg::Float64MultiArray::SharedPtr> msg_ptr_box;  // 无锁，双重缓冲
 

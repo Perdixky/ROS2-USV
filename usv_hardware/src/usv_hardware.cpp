@@ -123,7 +123,7 @@ std::vector<hardware_interface::StateInterface> USVHardware::export_state_interf
 
     // HMC5883L反馈的磁力大小
     state_interfaces.emplace_back(hardware_interface::StateInterface(
-            "HMC5883L", "angular_z", &odometry_msg_.angular_z
+            "HMC5883L", "angle_z", &odometry_msg_.angle_z
         )
     );
 
@@ -143,7 +143,11 @@ hardware_interface::return_type USVHardware::read(const rclcpp::Time &, const rc
     imu_msg_.linear_acceleration_x = msg_buffer_ptr->data[1];
     imu_msg_.linear_acceleration_y = msg_buffer_ptr->data[2];
 
-    odometry_msg_.angular_z = msg_buffer_ptr->data[3];
+    odometry_msg_.angle_z = msg_buffer_ptr->data[3];
+
+    teleop_msg_.speed = static_cast<char>(msg_buffer_ptr->data[4]);
+    teleop_msg_.angular_speed = static_cast<char>(msg_buffer_ptr->data[5]);
+    teleop_msg_.is_teleoperated = msg_buffer_ptr->data[6] > 0;
 
     return hardware_interface::return_type::OK;
 }
