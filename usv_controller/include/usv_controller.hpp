@@ -44,6 +44,7 @@ struct Handles{
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> motor_speed_handles; // command
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> imu_handles;  // state
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> magnetic_field_handles;  // state
+    std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> teleop_handles;  // state  
 };
 
 // 与SystemInterface不同的是，ControllerInterface自带基节点，使用get_node()方法获取
@@ -76,6 +77,10 @@ private:
         "MPU6050/linear_acceleration_y",
 
         "HMC5883L/angular_z",
+
+        "FS-IA6B/speed",
+        "FS-IA6B/angular_speed",
+        "FS-IA6B/is_teleoperated",
     };
 
     // 发送信息的缓存

@@ -107,8 +107,10 @@ controller_interface::CallbackReturn USVController::on_activate(const rclcpp_lif
     {
         if (state_interface.get_prefix_name() == "MPU6050")
             handles_.imu_handles.emplace_back(std::ref(state_interface));
-        else
+        else if(state_interface.get_prefix_name() == "HMC5883L")
             handles_.magnetic_field_handles.emplace_back(std::ref(state_interface));
+        else
+            handles_.teleop_handles.emplace_back(std::ref(state_interface));
     }
 
     // 确定填充顺序
@@ -161,16 +163,23 @@ controller_interface::return_type USVController::update(const rclcpp::Time& time
     received_twist_msg_ptr_.pop(twist_message);
     std::shared_ptr<nav_msgs::msg::Odometry> odometry;
     odometry_msg_ptr_box_.get(odometry);
-    
-    if (!odometry)
-    {
-        return controller_interface::return_type::ERROR;
-    }
-    double speed_difference = *(params_.pid.begin()) * (twist_message.angular.z - odometry->twist.twist.angular.z);
-    handles_.motor_speed_handles[0].get().set_value(twist_message.linear.x - speed_difference);
-    handles_.motor_speed_handles[1].get().set_value(twist_message.linear.x + speed_difference);
 
+    if(handles_.teleop_handles[2].get().get_value() > 0)
+    {
+        double speed_difference = params_.steering_sensitivity * handles_.teleop_handles[1].get().get_value();
+        handles_.motor_speed_handles[0].get().set_value(handles_.teleop_handles[0].get().get_value() + speed_difference - 50);
+        handles_.motor_speed_handles[1].get().set_value(handles_.teleop_handles[0].get().get_value() + speed_difference - 50);
+    }
+    else{
+        if (!odometry){
+            return controller_interface::return_type::ERROR;
+        }
+        double speed_difference = *(params_.pid.begin()) * (twist_message.angular.z - odometry->twist.twist.angular.z);
+        handles_.motor_speed_handles[0].get().set_value(twist_message.linear.x - speed_difference);
+        handles_.motor_speed_handles[1].get().set_value(twist_message.linear.x + speed_difference);
+    }
     return controller_interface::return_type::OK;
+    
 }
 
 #include "class_loader/register_macro.hpp"

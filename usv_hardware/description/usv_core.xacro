@@ -26,26 +26,6 @@
       </collision>
     </link>
 
-    <!-- odom -->
-    <joint name="odom" type="fixed">
-      <parent link="odom"/>
-      <child link="base_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
-
-    <!-- Odom Link -->
-    <link name="odom">
-      <visual>
-        <geometry>
-          <box size="0.1 0.1 0.1"/>
-        </geometry>
-      </visual>
-      <collision>
-        <geometry>
-          <box size="0.1 0.1 0.1"/>
-        </geometry>
-      </collision>
-    </link>
 
     <joint name="laser" type="fixed">
       <parent link="base_footprint"/>

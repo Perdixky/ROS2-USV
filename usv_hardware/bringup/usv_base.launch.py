@@ -110,7 +110,7 @@ def generate_launch_description():
         parameters=[slam_toolbox_params],
     )
     
-    twist_mux_params = PathJoinSubstitution([
+    """twist_mux_params = PathJoinSubstitution([
         FindPackageShare("usv_hardware"),
         "config",
         "twist_mux.yaml",  # 确保这个文件存在并且包含了正确的SLAM配置
@@ -122,11 +122,10 @@ def generate_launch_description():
         name="twist_mux",
         output="screen",
         parameters=[twist_mux_params],
-    )
+    )"""
     
     
     nodes = [
-        twist_mux,
         ekf_node,
         control_node,
         robot_state_pub_node,
