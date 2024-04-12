@@ -65,7 +65,7 @@ controller_interface::CallbackReturn USVController::on_configure(const rclcpp_li
     }
 
     // 初始化command_subscriber
-    command_subscriber_ = get_node()->create_subscription<geometry_msgs::msg::Twist> ("/cmd_vel_out", rclcpp::SystemDefaultsQoS(), 
+    command_subscriber_ = get_node()->create_subscription<geometry_msgs::msg::Twist> ("/cmd_vel", rclcpp::SystemDefaultsQoS(), 
         [this](const geometry_msgs::msg::Twist::SharedPtr command){
             received_twist_msg_ptr_.push(*command);
         }
@@ -161,9 +161,10 @@ controller_interface::return_type USVController::update(const rclcpp::Time& time
     received_twist_msg_ptr_.pop(twist_message);
     std::shared_ptr<nav_msgs::msg::Odometry> odometry;
     odometry_msg_ptr_box_.get(odometry);
-    if (!odometry)  // 测试
+    
+    if (!odometry)
     {
-        return controller_interface::return_type::OK;
+        return controller_interface::return_type::ERROR;
     }
     double speed_difference = *(params_.pid.begin()) * (twist_message.angular.z - odometry->twist.twist.angular.z);
     handles_.motor_speed_handles[0].get().set_value(twist_message.linear.x - speed_difference);

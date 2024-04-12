@@ -28,6 +28,13 @@
       <sensor name="HMC5883L">
         <state_interface name="angular_z"/>
       </sensor>
+
+      <!-- 接收机接口 -->
+      <sensor name="FS-IA6B">
+        <state_interface name="speed"/>
+        <state_interface name="angular_speed"/>
+        <state_interface name="is_teleoperated"/>
+      </sensor>
     </ros2_control>
   </xacro:macro>
 </robot>

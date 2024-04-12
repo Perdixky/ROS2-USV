@@ -127,6 +127,22 @@ std::vector<hardware_interface::StateInterface> USVHardware::export_state_interf
         )
     );
 
+    // 接收机接收信号
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "FS-IA6B", "speed", &teleop_msg_.speed
+        )
+    );
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "FS-IA6B", "angular_speed", &teleop_msg_.angular_speed
+        )
+    );
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "FS-IA6B", "is_teleoperated", &teleop_msg_.is_teleoperated
+        )
+    );
+
     return state_interfaces;
 }
 
@@ -145,9 +161,9 @@ hardware_interface::return_type USVHardware::read(const rclcpp::Time &, const rc
 
     odometry_msg_.angle_z = msg_buffer_ptr->data[3];
 
-    teleop_msg_.speed = static_cast<char>(msg_buffer_ptr->data[4]);
-    teleop_msg_.angular_speed = static_cast<char>(msg_buffer_ptr->data[5]);
-    teleop_msg_.is_teleoperated = msg_buffer_ptr->data[6] > 0;
+    teleop_msg_.speed = msg_buffer_ptr->data[4];
+    teleop_msg_.angular_speed = msg_buffer_ptr->data[5];
+    teleop_msg_.is_teleoperated = msg_buffer_ptr->data[6];
 
     return hardware_interface::return_type::OK;
 }

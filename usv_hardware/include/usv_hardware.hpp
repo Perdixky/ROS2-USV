@@ -46,10 +46,10 @@ namespace simple
     };
 
     struct Teleop{
-        bool is_teleoperated;
-        unsigned char speed;
-        unsigned char angular_speed;
-    }
+        double is_teleoperated;
+        double speed;
+        double angular_speed;
+    };
 }
 
 class USVHardware : public hardware_interface::SystemInterface  // 无node成员
