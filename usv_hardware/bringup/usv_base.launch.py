@@ -115,7 +115,7 @@ def generate_launch_description():
     # 事件处理：当controller_manager启动后，启动slam_toolbox
     start_slam_toolbox_node_handler = RegisterEventHandler(
         OnProcessStart(
-            process_matcher=lambda process: process is controller_manager_node,
+            target_action=controller_manager_node,
             on_start=[
                 LogInfo(msg="controller_manager is running, starting slam_toolbox."),
                 EmitEvent(event=Shutdown()),
@@ -123,6 +123,7 @@ def generate_launch_description():
             ]
         )
     )
+
     
     serial = Node(
         package="serial",
