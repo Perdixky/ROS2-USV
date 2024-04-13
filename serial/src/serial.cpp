@@ -57,7 +57,7 @@ private:
 
     /*
      * \brief 以一定频率（80ms）从串口的缓冲中读取数据
-     * \note 接收的数据中，angular是char类型，其余两个是乘以量程除以35535，量程以下位机配置传感器时的为准
+     * \note 接收的数据中，angular是float类型，其余两个是乘以量程除以35535，量程以下位机配置传感器时的为准
      */
     void timer_callback()
     {

@@ -76,7 +76,7 @@ private:
         "MPU6050/linear_acceleration_x",
         "MPU6050/linear_acceleration_y",
 
-        "HMC5883L/angular_z",
+        "HMC5883L/angle_z",
 
         "FS-IA6B/speed",
         "FS-IA6B/angular_speed",

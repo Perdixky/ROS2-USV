@@ -5,9 +5,6 @@ controller_manager:
     usv_controller:
       type: usv_controller/USVController
 
-    joint_broad:
-      type: joint_state_broadcaster/JointStateBroadcaster
-
 usv_controller:
   ros__parameters:
     steering_sensitivity: 1  # 控制转弯的灵敏度，需要根据实际情况调试
