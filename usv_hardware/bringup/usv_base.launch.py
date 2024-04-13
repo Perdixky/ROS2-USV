@@ -110,6 +110,13 @@ def generate_launch_description():
         parameters=[slam_toolbox_params],
     )
     
+    serial = Node(
+        package="serial",
+        executable="ros_serial",
+        name="ros_serial",
+        output="screen",
+    )
+
     """twist_mux_params = PathJoinSubstitution([
         FindPackageShare("usv_hardware"),
         "config",
@@ -126,6 +133,7 @@ def generate_launch_description():
     
     
     nodes = [
+        serial,
         ekf_node,
         control_node,
         robot_state_pub_node,

@@ -56,10 +56,18 @@ install(
 )
 
 install(
-  FILES  description/usv_core.xacro
-  FILES control/control.xacro
-  DESTINATION share/usv_hardware
+  FILES  
+    description/usv.urdf.xacro
+  DESTINATION share/usv_hardware/urdf
 )
+
+install(
+  FILES  
+    description/usv_core.xacro
+    control/control.xacro
+  DESTINATION share/usv_hardware/urdf
+)
+
 
 install(
   DIRECTORY bringup
