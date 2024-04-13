@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="robot">
-    <xacro:include filename="$(find usv_hardware)/control/usv_core.xacro" />
+    <xacro:include filename="$(find usv_hardware)/description/usv_core.xacro" />
     <!-- find语法可以找到包目录，具有移植性 -->
-    <xacro:include filename="$(find usv_hardware)/description/control.xacro" /> 
+    <xacro:include filename="$(find usv_hardware)/control/control.xacro" /> 
 
     <xacro:usv_base />
     <xacro:usv_hardware />

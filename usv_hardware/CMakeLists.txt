@@ -61,7 +61,7 @@ install(
 )
 
 install(
-  DIRECTORY descripton
+  DIRECTORY description
   DESTINATION share/usv_hardware
 )
 
