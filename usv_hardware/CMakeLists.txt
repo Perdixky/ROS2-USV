@@ -51,8 +51,8 @@ install(
 )
 
 install(
-  FILES  description/usv.urdf.xacro
-  DESTINATION share/usv_hardware/urdf
+  DIRECTORY urdf
+  DESTINATION share/usv_hardware
 )
 
 install(
