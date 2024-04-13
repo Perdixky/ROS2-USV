@@ -79,7 +79,7 @@ private:
         "HMC5883L/angle_z",
 
         "FS-IA6B/speed",
-        "FS-IA6B/angular_speed",
+        "FS-IA6B/angle_speed",
         "FS-IA6B/is_teleoperated",
     };
 
