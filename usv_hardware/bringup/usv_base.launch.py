@@ -1,8 +1,10 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
 from launch_ros.actions import Node, LifecycleNode
+from launch.actions import RegisterEventHandler, EmitEvent, LogInfo, DeclareLaunchArgument
 from launch_ros.substitutions import FindPackageShare
+from launch.event_handlers import OnProcessStart
+from launch.events import Shutdown
 """from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.launch_description_sources import AnyLaunchDescriptionSource"""
@@ -58,7 +60,7 @@ def generate_launch_description():
         ]
     )
 
-    control_node = Node(
+    controller_manager_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
         parameters=[robot_controllers],
@@ -110,6 +112,18 @@ def generate_launch_description():
         parameters=[slam_toolbox_params],
     )
     
+    # 事件处理：当controller_manager启动后，启动slam_toolbox
+    start_slam_toolbox_node_handler = RegisterEventHandler(
+        OnProcessStart(
+            process_matcher=lambda process: process is controller_manager_node,
+            on_start=[
+                LogInfo(msg="controller_manager is running, starting slam_toolbox."),
+                EmitEvent(event=Shutdown()),
+                slam_toolbox
+            ]
+        )
+    )
+    
     serial = Node(
         package="serial",
         executable="ros_serial",
@@ -135,11 +149,12 @@ def generate_launch_description():
     nodes = [
         serial,
         ekf_node,
-        control_node,
+        controller_manager_node,
         robot_state_pub_node,
         robot_controller_spawner,
         slam_toolbox,
         ydlidar_node,
+        start_slam_toolbox_node_handler,
     ]
 
     """# 包含navigation_launch.py
@@ -163,6 +178,6 @@ def generate_launch_description():
     )"""
 
     return LaunchDescription(
-        declared_arguments + nodes
+        declared_arguments + nodes,
     )
 
