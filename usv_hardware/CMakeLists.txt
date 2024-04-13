@@ -56,16 +56,13 @@ install(
 )
 
 install(
-  FILES  
-    description/usv.urdf.xacro
-  DESTINATION share/usv_hardware/urdf
+  DIRECTORY control
+  DESTINATION share/usv_hardware
 )
 
 install(
-  FILES  
-    description/usv_core.xacro
-    control/control.xacro
-  DESTINATION share/usv_hardware/urdf
+  DIRECTORY descripton
+  DESTINATION share/usv_hardware
 )
 
 
