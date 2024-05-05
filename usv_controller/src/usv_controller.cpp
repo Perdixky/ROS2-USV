@@ -21,168 +21,204 @@
  *
  ***********************************************************************/
 
-#include "usv_controller.hpp"
 
-controller_interface::InterfaceConfiguration USVController::command_interface_configuration() const
-{
-    return {controller_interface::interface_configuration_type::INDIVIDUAL, command_interface_types_};
-}
 
-controller_interface::InterfaceConfiguration USVController::state_interface_configuration() const
-{
-    return {controller_interface::interface_configuration_type::INDIVIDUAL, state_interface_types_};
-}
+#include "usv_hardware.hpp"
+#include <ncurses.h>
+
 /*
- * \brief 初始化ParamListener
+ * \brief 初始化父类和基节点
  */
-controller_interface::CallbackReturn USVController::on_init()
+hardware_interface::CallbackReturn USVHardware::on_init(const hardware_interface::HardwareInfo &info)
 {
-    RCLCPP_DEBUG(get_node()->get_logger(), "启动节点……");
-    try{
-        param_listener_ = std::make_shared<usv_controller::ParamListener>(get_node());
-        params_ = param_listener_->get_params();
-    }catch(const std::exception& e){
-        RCLCPP_FATAL(get_node()->get_logger(), "节点监听器启动失败：%s", e.what());
-        return controller_interface::CallbackReturn::ERROR;
+    // 首先执行基类的初始化，确保成功
+    if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS){
+        return hardware_interface::CallbackReturn::ERROR;
     }
-    return controller_interface::CallbackReturn::SUCCESS;
+
+    node_ = std::make_shared<rclcpp::Node>("USVHardware");
+    RCLCPP_DEBUG(this->node_->get_logger(), "init成功！");
+    // 此处应当有数量、类型之类的检查，但是由于是私用包，省略
+    return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 /*
- * \brief 配置节点
+ * \brief 启动时配置节点，创建realtime_publisher
  */
-controller_interface::CallbackReturn USVController::on_configure(const rclcpp_lifecycle::State &)
+hardware_interface::CallbackReturn USVHardware::on_configure(const rclcpp_lifecycle::State &)
 {
-    RCLCPP_DEBUG(get_node()->get_logger(), "配置节点……");
+    subscriber_ = node_->create_subscription<std_msgs::msg::Float64MultiArray>(
+        "state",
+        rclcpp::SystemDefaultsQoS(),
+        [this](const std_msgs::msg::Float64MultiArray::SharedPtr msg) -> void {
+            RCLCPP_DEBUG(this->node_->get_logger(), "接收到state！");
+            msg_ptr_box.set(std::move(msg));  // 在不违反实时约束的情况下，在实时和非实时环境中安全地交换数据
+        }
+    );
+    _ = node_->create_publisher<std_msgs::msg::Float64MultiArray>("command", rclcpp::SystemDefaultsQoS());
+    realtime_publisher_ = std::make_shared<realtime_tools::RealtimePublisher<std_msgs::msg::Float64MultiArray>>(_);
 
-    //更新参数
-    if(param_listener_->is_old(params_))
-    {
-        params_ = param_listener_->get_params();
-        RCLCPP_DEBUG(get_node()->get_logger(), "steering_sensitivity: %ld\nmotor_speed_ratio: %lf\npid: %lf, %lf, %lf", 
-        params_.steering_sensitivity, params_.motor_speed_ratio, *params_.pid.begin(), *(params_.pid.begin() + 1), *(params_.pid.begin() + 2));
-        RCLCPP_INFO(get_node()->get_logger(), "更新参数成功");
-    }
+    this->node_->create_service<std_srvs::srv::Trigger>(
+        "alignment_service", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> response){  // 一个15s倒计时
+            while(!realtime_publisher_->trylock()) { 
+                std::this_thread::sleep_for(std::chrono::milliseconds(1)); // 稍作等待再重试
+            }
+            initscr(); // 初始化ncurses模式
+            curs_set(0); // 隐藏光标
 
-    // 初始化command_subscriber
-    command_subscriber_ = get_node()->create_subscription<geometry_msgs::msg::Twist> ("/cmd_vel", rclcpp::SystemDefaultsQoS(), 
-        [this](const geometry_msgs::msg::Twist::SharedPtr command){
-            received_twist_msg_ptr_.push(*command);
+            double total { 15 };
+            for (double i{ 0 }; i <= total; i += 0.1) {
+                int width = 50; // 进度条的宽度
+                int pos = (width * i) / total; // 计算当前进度对应的位置
+
+                mvprintw(0, 0, "["); // 在第一行第一列画出进度条开始
+                for (int i = 0; i < width; ++i) {
+                    if (i < pos) printw("="); // 已完成的进度部分
+                    else if (i == pos) printw(">"); // 当前进度的位置
+                    else printw(" "); // 未完成的进度部分
+                }
+                printw("] %lfs/%lfs", i, total); // 显示百分比
+                refresh(); // 刷新屏幕显示更新的进度条
+                usleep(100000); // 模拟任务进度，等待0.1秒
+            }
+
+            response->success = true;  // 设置响应成功
+            response->message = "请查看下位机信息";  // 返回一个消息
         }
     );
 
-    // 初始化odometry_subscriber
-    odometry_subscriber_ = get_node()->create_subscription<nav_msgs::msg::Odometry> ("/odometry/filtered", rclcpp::SystemDefaultsQoS(),
-        [this](const nav_msgs::msg::Odometry::SharedPtr odom){
-            odometry_msg_ptr_box_.set(odom);
-        }
+    return hardware_interface::CallbackReturn::SUCCESS;
+}
+
+/*
+ * \brief 每一次激活时配置其信息
+ * \note 初始化那些只用在活动时才使用的信息
+ */
+hardware_interface::CallbackReturn USVHardware::on_activate(const rclcpp_lifecycle::State&)
+{
+    std::shared_ptr<std_msgs::msg::Float64MultiArray> empty_initarray = std::make_shared<std_msgs::msg::Float64MultiArray>();
+    empty_initarray->data.emplace_back(std::nan("1"));  // 初始化，防止未定义行为
+    msg_ptr_box.set(empty_initarray);
+
+    RCLCPP_DEBUG(this->node_->get_logger(), "激活成功！");
+    return hardware_interface::CallbackReturn::SUCCESS;
+}
+
+hardware_interface::CallbackReturn USVHardware::on_deactivate(const rclcpp_lifecycle::State &)
+{
+    return hardware_interface::CallbackReturn::SUCCESS;
+}
+
+/*
+ * \brief 暴露Command Interface
+ */
+std::vector<hardware_interface::CommandInterface> USVHardware::export_command_interfaces()
+{
+    std::vector<hardware_interface::CommandInterface> command_interfaces;
+
+    // CommandInterface中是两个马达的转速
+    for (unsigned char i{ 0 }; i < 2; i++)  
+    {
+        command_interfaces.emplace_back(hardware_interface::CommandInterface(
+                info_.joints[i].name, "motor_speed", &motor_speeds_[i]
+            )
+        );
+    }
+
+    return command_interfaces;
+}
+
+/*
+ * \brief 暴露State Interface
+ */
+std::vector<hardware_interface::StateInterface> USVHardware::export_state_interfaces()
+{
+    std::vector<hardware_interface::StateInterface> state_interfaces;
+
+    // MPU6050反馈的速度和角速度
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "MPU6050", "angular_velocity_z", &imu_msg_.angular_velocity_z
+        )
     );
 
-    // 初始化imu_publisher
-    imu_publisher__ = get_node()->create_publisher<sensor_msgs::msg::Imu>("imu", rclcpp::SystemDefaultsQoS());
-    imu_realtime_publisher_ = std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::Imu>>(imu_publisher__);
-    angular_publisher__ = get_node()->create_publisher<nav_msgs::msg::Odometry>("angle", rclcpp::SystemDefaultsQoS());
-    angular_realtime_publisher_ = std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(angular_publisher__);
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "MPU6050", "linear_acceleration_x", &imu_msg_.linear_acceleration_x
+        )
+    );
 
-    // 初始化需要发布的信息
-    imu_msgs_.header.frame_id = "sensor_link";
-    imu_msgs_.angular_velocity_covariance = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };  // 不提供数据时，协方差矩阵第一个元素设为-1；协方差矩阵未知时，应全部设为0
-    imu_msgs_.linear_acceleration_covariance = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    imu_msgs_.orientation_covariance = { -1, 0, 0, 0, 0, 0, 0, 0, 0 };
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "MPU6050", "linear_acceleration_y", &imu_msg_.linear_acceleration_y
+        )
+    );
 
-    odometry_msgs_.header.frame_id = "world";  // 磁力计数据相对于世界
-    odometry_msgs_.pose.covariance = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    odometry_msgs_.twist.covariance = { -1, 0, 0, 0, 0, 0, 0, 0, 0 };
+    // HMC5883L反馈的磁力大小
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "HMC5883L", "angle_z", &odometry_msg_.angle_z
+        )
+    );
 
-    return controller_interface::CallbackReturn::SUCCESS;
+    // 接收机接收信号
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "FS-IA6B", "speed", &teleop_msg_.speed
+        )
+    );
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "FS-IA6B", "angular_speed", &teleop_msg_.angular_speed
+        )
+    );
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+            "FS-IA6B", "is_teleoperated", &teleop_msg_.is_teleoperated
+        )
+    );
+
+    return state_interfaces;
 }
 
 /*
- * \brief 激活节点
+ * \brief 以一个频率从硬件读取信息，并更新内部状态
  */
-controller_interface::CallbackReturn USVController::on_activate(const rclcpp_lifecycle::State &)
+hardware_interface::return_type USVHardware::read(const rclcpp::Time &, const rclcpp::Duration &)
 {
-    // 获取Interface句柄
-    for (auto& state_interface : state_interfaces_)
-    {
-        if (state_interface.get_prefix_name() == "MPU6050")
-            handles_.imu_handles.emplace_back(std::ref(state_interface));
-        else if(state_interface.get_prefix_name() == "HMC5883L")
-            handles_.magnetic_field_handles.emplace_back(std::ref(state_interface));
-        else
-            handles_.teleop_handles.emplace_back(std::ref(state_interface));
-    }
+    std::shared_ptr<std_msgs::msg::Float64MultiArray> msg_buffer_ptr;
+    msg_ptr_box.get(msg_buffer_ptr);
+    rclcpp::spin_some(this->node_);  // 使用spin_some方法可以不堵塞read还有write方法的执行，它只处理现在在事件队列中相关的回调
 
-    // 确定填充顺序
-    auto& first_handle = command_interfaces_.begin()->get_prefix_name() == "left_motor" ? 
-                        command_interfaces_[0] : command_interfaces_[1];
-    auto& second_handle = &first_handle == &command_interfaces_[0] ? 
-                      command_interfaces_[1] : command_interfaces_[0];
-    // 填充handles_
-    handles_.motor_speed_handles.emplace_back(std::ref(first_handle));
-    handles_.motor_speed_handles.emplace_back(std::ref(second_handle));
-    RCLCPP_DEBUG(get_node()->get_logger(), "controller激活成功");
+    imu_msg_.angular_velocity_z = msg_buffer_ptr->data[0];
+    imu_msg_.linear_acceleration_x = msg_buffer_ptr->data[1];
+    imu_msg_.linear_acceleration_y = msg_buffer_ptr->data[2];
 
-    return controller_interface::CallbackReturn::SUCCESS;
+    odometry_msg_.angle_z = msg_buffer_ptr->data[3];
+
+    teleop_msg_.speed = msg_buffer_ptr->data[4];
+    teleop_msg_.angular_speed = msg_buffer_ptr->data[5];
+    teleop_msg_.is_teleoperated = msg_buffer_ptr->data[6];
+
+
+    return hardware_interface::return_type::OK;
 }
 
 /*
- * \brief 更新，包括更新CommandInterface和StateInterface并发布
+ * \brief 以一个频率发送数据到硬件
  */
-controller_interface::return_type USVController::update(const rclcpp::Time& time, const rclcpp::Duration &)
+hardware_interface::return_type USVHardware::write(const rclcpp::Time &, const rclcpp::Duration &)
 {
-    params_ = param_listener_->get_params();
-
-    // 发布数据给robot_localization，获取odom
-    if (imu_realtime_publisher_->trylock())
+    if(realtime_publisher_->trylock())
     {
-        imu_msgs_.header.stamp = time;
-        imu_msgs_.angular_velocity.z = handles_.imu_handles[0].get().get_value();
-        imu_msgs_.linear_acceleration.x = handles_.imu_handles[1].get().get_value();
-        imu_msgs_.linear_acceleration.y = handles_.imu_handles[2].get().get_value();
-        imu_realtime_publisher_->msg_ = imu_msgs_;
-        imu_realtime_publisher_->unlockAndPublish();
+        realtime_publisher_->msg_.data = motor_speeds_;
+        realtime_publisher_->unlockAndPublish();
     }
-    if (angular_realtime_publisher_->trylock())
-    {
-        odometry_msgs_.header.stamp = time;
-        
-        tf2::Quaternion q;
-        q.setRPY(0, 0, handles_.magnetic_field_handles[0].get().get_value());  // 自动计算四元数
-        odometry_msgs_.pose.pose.orientation.x = q.x();
-        odometry_msgs_.pose.pose.orientation.y = q.y();
-        odometry_msgs_.pose.pose.orientation.z = q.z();
-        odometry_msgs_.pose.pose.orientation.w = q.w();
+    RCLCPP_DEBUG(this->node_->get_logger(), "motor_speed:%lf, %lf", motor_speeds_[0], motor_speeds_[1]);
 
-        angular_realtime_publisher_->msg_ = odometry_msgs_;
-        angular_realtime_publisher_->unlockAndPublish();
-    }
-
-    // 使用pid算法调节获得StateInterface并发布命令
-    geometry_msgs::msg::Twist twist_message;
-    received_twist_msg_ptr_.pop(twist_message);
-    std::shared_ptr<nav_msgs::msg::Odometry> odometry;
-    odometry_msg_ptr_box_.get(odometry);
-
-    if(handles_.teleop_handles[2].get().get_value() > 0)
-    {
-        double speed_difference = params_.steering_sensitivity * handles_.teleop_handles[1].get().get_value();
-        handles_.motor_speed_handles[0].get().set_value(handles_.teleop_handles[0].get().get_value() + speed_difference - 50);
-        handles_.motor_speed_handles[1].get().set_value(handles_.teleop_handles[0].get().get_value() + speed_difference - 50);
-    }
-    else{
-        if (!odometry){
-            return controller_interface::return_type::ERROR;
-        }
-        double speed_difference = *(params_.pid.begin()) * (twist_message.angular.z - odometry->twist.twist.angular.z);
-        handles_.motor_speed_handles[0].get().set_value(twist_message.linear.x - speed_difference);
-        handles_.motor_speed_handles[1].get().set_value(twist_message.linear.x + speed_difference);
-    }
-    return controller_interface::return_type::OK;
-    
+    return hardware_interface::return_type::OK;  // motor_speeds是惯性数据，发送失败也可以返回OK
 }
 
-#include "class_loader/register_macro.hpp"
+/*
+ * \brief 注册插件
+ */
+#include "pluginlib/class_list_macros.hpp"
 
-CLASS_LOADER_REGISTER_CLASS(
-  USVController, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  USVHardware, hardware_interface::SystemInterface)

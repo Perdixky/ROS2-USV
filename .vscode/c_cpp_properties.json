@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/ros/humble/include/**",
+                "/opt/ros/humble/include/rclcpp",
+                "/home/cat/USV_ws/install/usv_controller/include/usv_controller_parameter",
+                "/opt/ros/humble/include/nav_msgs",
+                "/opt/ros/humble/include/rcl",
+                "/opt/ros/humble/include/std_msgs",
+                "/opt/ros/humble/include/realtime_tools"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

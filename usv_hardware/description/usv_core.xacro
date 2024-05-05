@@ -26,6 +26,13 @@
       </collision>
     </link>
 
+    <joint name="magnetometer_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="magnetometer_link"/>
+      <origin xyz="0 0 0" rpy="0 0 -1.5708" /> <!-- RPY中的 -1.5708 约等于 -90度 -->
+    </joint>
+    <link name="magnetometer_link"></link>
+
 
     <joint name="laser" type="fixed">
       <parent link="base_footprint"/>

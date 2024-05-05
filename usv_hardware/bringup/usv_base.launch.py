@@ -118,7 +118,6 @@ def generate_launch_description():
             target_action=controller_manager_node,
             on_start=[
                 LogInfo(msg="controller_manager is running, starting slam_toolbox."),
-                EmitEvent(event=Shutdown()),
                 slam_toolbox
             ]
         )
@@ -153,7 +152,6 @@ def generate_launch_description():
         controller_manager_node,
         robot_state_pub_node,
         robot_controller_spawner,
-        slam_toolbox,
         ydlidar_node,
         start_slam_toolbox_node_handler,
     ]

@@ -61,7 +61,7 @@ public:
     controller_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State&) override;
 
     controller_interface::return_type update(const rclcpp::Time&, const rclcpp::Duration&) override;
-
+    
 private:
     std::shared_ptr<usv_controller::ParamListener> param_listener_;
     usv_controller::Params params_;
@@ -79,7 +79,7 @@ private:
         "HMC5883L/angle_z",
 
         "FS-IA6B/speed",
-        "FS-IA6B/angle_speed",
+        "FS-IA6B/angular_speed",
         "FS-IA6B/is_teleoperated",
     };
 

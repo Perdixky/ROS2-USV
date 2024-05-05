@@ -10,9 +10,9 @@ ekf_filter_node:
 
     odom0: angle
     odom0_config: [false, false, false,
-                   false, false, false,
-                   true, true, true,
                    false, false, true,
+                   false, false, false,
+                   false, false, false,
                    false, false, false]
     odom0_queue_size: 10
     odom0_nodelay: false
@@ -21,21 +21,12 @@ ekf_filter_node:
 
     imu0: imu
     imu0_config: [false, false, false,
-                  true, true, false,
                   false, false, false,
-                  true, true, true,
-                  false, false, false]
+                  false, false, false,
+                  false, false, true,
+                  true, true, false]
     imu0_nodelay: false
     imu0_differential: false
     imu0_relative: false
     imu0_queue_size: 5
-
-    magnetometer0: imu/mag
-    magnetometer0_config: [false, false, false,
-                           false, false, false,
-                           false, false, false,
-                           false, false, true,
-                           false, false, false]
-    magnetometer0_nodelay: false
-    magnetometer0_relative: false
     magnetometer0_queue_size: 5

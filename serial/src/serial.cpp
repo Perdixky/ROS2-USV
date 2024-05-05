@@ -43,7 +43,7 @@ public:
     SerialPublisher() : rclcpp::Node("serial_publisher")
     {
         sensor_publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("state", rclcpp::SystemDefaultsQoS());
-        timer_ = this->create_wall_timer(std::chrono::milliseconds(80), [this](){ this->timer_callback(); });
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(120), [this](){ this->timer_callback(); });
         subscriber_ = this->create_subscription<std_msgs::msg::Float64MultiArray>("command", rclcpp::SystemDefaultsQoS(),
         [this](std_msgs::msg::Float64MultiArray::SharedPtr msgs){
             this->subscription_callback(msgs);
@@ -56,36 +56,35 @@ private:
     realtime_tools::RealtimeBox<std::string> box;
 
     /*
-     * \brief 以一定频率（80ms）从串口的缓冲中读取数据
+     * \brief 以一定频率（120ms）从串口的缓冲中读取数据
      * \note 接收的数据中，angular是float类型，其余两个是乘以量程除以35535，量程以下位机配置传感器时的为准
      */
     void timer_callback()
     {
         std_msgs::msg::Float64MultiArray msgs;
-        std::string data = ros_serial.read(8);
+        std::string data = ros_serial.read(ros_serial.available());
+        RCLCPP_INFO(this->get_logger(), "接收到的数据：%s", data.c_str());
         ros_serial.flushInput();
         auto pos = data.find('\n');
-        if (pos + 10 >= data.size() && pos == std::string::npos)  // 检查是否没有\n或者是否pos后没有10个数据
+        if (pos + 12 <= data.size() && pos != std::string::npos)  // 检查是否没有\n或者是否pos后没有12个数据
         {
-            RCLCPP_ERROR(this->get_logger(), "接收的数据有问题！");
-            std::cout << data;
+            // 从data中提取数据并进行转换
+            short origin_angular_speed_z = *reinterpret_cast<const short*>(data.data() + 1);
+            short origin_accelerate_x = *reinterpret_cast<const short*>(data.data() + 3);
+            short origin_accelerate_y = *reinterpret_cast<const short*>(data.data() + 5);
+            float angle = *reinterpret_cast<const float*>(data.data() + 7);
+            RCLCPP_INFO(this->get_logger(), "%d %d %d", static_cast<int>(data[11]), static_cast<int>(data[12]), static_cast<int>(data[13]));
+
+            // 将提取的数据转换为目标格式并存储
+            msgs.data.emplace_back(static_cast<double>(origin_angular_speed_z) * 1.3316e-5);  // angular_speed_z，50°/65535->rad/s
+            msgs.data.emplace_back(static_cast<double>(origin_accelerate_x) * 5.515688757563e-4);  // accelerate_x，2g->m/s²
+            msgs.data.emplace_back(static_cast<double>(origin_accelerate_y) * 5.515688757563e-4);  // accelerate_y，2g->m/s²
+            msgs.data.emplace_back(static_cast<double>(angle));  // angle
+            msgs.data.emplace_back(static_cast<double>(data[11]));  // teleop_speed
+            msgs.data.emplace_back(static_cast<double>(data[12]));  // teleop_angular_speed
+            msgs.data.emplace_back(static_cast<double>(data[13]));  // is_teleoperated
+            sensor_publisher_->publish(msgs);
         }
-
-        // 从data中提取数据并进行转换
-        short origin_angular_speed_z = *reinterpret_cast<const short*>(data.data() + 1);
-        short origin_accelerate_x = *reinterpret_cast<const short*>(data.data() + 3);
-        short origin_accelerate_y = *reinterpret_cast<const short*>(data.data() + 5);
-        float angle = *reinterpret_cast<const float*>(data.data() + 7);
-
-        // 将提取的数据转换为目标格式并存储
-        msgs.data.emplace_back(static_cast<double>(origin_angular_speed_z) * 0.00703532);  // angular_speed_z
-        msgs.data.emplace_back(static_cast<double>(origin_accelerate_x) * 5.515688757563e-4);  // accelerate_x
-        msgs.data.emplace_back(static_cast<double>(origin_accelerate_y) * 5.515688757563e-4);  // accelerate_y
-        msgs.data.emplace_back(static_cast<double>(angle));  // angle
-        msgs.data.emplace_back(static_cast<double>(data[11]));  // teleop_speed
-        msgs.data.emplace_back(static_cast<double>(data[12]));  // teleop_angular_speed
-        msgs.data.emplace_back(static_cast<double>(data[13]));  // is_teleoperated
-        sensor_publisher_->publish(msgs);
     }
 
     /*
@@ -108,7 +107,6 @@ auto main(int argc, char** argv) -> int
     ros_serial.setBaudrate(115200);
     serial::Timeout to = serial::Timeout::simpleTimeout(1000);
     ros_serial.setTimeout(to);
-    return 0;
     try{
         ros_serial.open();
     }catch(serial::IOException &e){

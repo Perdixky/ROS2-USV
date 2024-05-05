@@ -24,6 +24,7 @@
 
 
 #include "usv_hardware.hpp"
+#include <ncurses.h>
 
 /*
  * \brief 初始化父类和基节点
@@ -49,13 +50,43 @@ hardware_interface::CallbackReturn USVHardware::on_configure(const rclcpp_lifecy
     subscriber_ = node_->create_subscription<std_msgs::msg::Float64MultiArray>(
         "state",
         rclcpp::SystemDefaultsQoS(),
-        [this](const std_msgs::msg::Float64MultiArray::SharedPtr msg) -> void{
+        [this](const std_msgs::msg::Float64MultiArray::SharedPtr msg) -> void {
             RCLCPP_DEBUG(this->node_->get_logger(), "接收到state！");
             msg_ptr_box.set(std::move(msg));  // 在不违反实时约束的情况下，在实时和非实时环境中安全地交换数据
         }
     );
     _ = node_->create_publisher<std_msgs::msg::Float64MultiArray>("command", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_shared<realtime_tools::RealtimePublisher<std_msgs::msg::Float64MultiArray>>(_);
+
+    this->node_->create_service<std_srvs::srv::Trigger>(
+        "alignment_service", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> response){  // 一个15s倒计时
+            while(!realtime_publisher_->trylock()) { 
+                std::this_thread::sleep_for(std::chrono::milliseconds(1)); // 稍作等待再重试
+            }
+            initscr(); // 初始化ncurses模式
+            curs_set(0); // 隐藏光标
+
+            double total { 15 };
+            for (double i{ 0 }; i <= total; i += 0.1) {
+                int width = 50; // 进度条的宽度
+                int pos = (width * i) / total; // 计算当前进度对应的位置
+
+                mvprintw(0, 0, "["); // 在第一行第一列画出进度条开始
+                for (int i = 0; i < width; ++i) {
+                    if (i < pos) printw("="); // 已完成的进度部分
+                    else if (i == pos) printw(">"); // 当前进度的位置
+                    else printw(" "); // 未完成的进度部分
+                }
+                printw("] %lfs/%lfs", i, total); // 显示百分比
+                refresh(); // 刷新屏幕显示更新的进度条
+                usleep(100000); // 模拟任务进度，等待0.1秒
+            }
+
+            response->success = true;  // 设置响应成功
+            response->message = "请查看下位机信息";  // 返回一个消息
+    });
+
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -164,6 +195,7 @@ hardware_interface::return_type USVHardware::read(const rclcpp::Time &, const rc
     teleop_msg_.speed = msg_buffer_ptr->data[4];
     teleop_msg_.angular_speed = msg_buffer_ptr->data[5];
     teleop_msg_.is_teleoperated = msg_buffer_ptr->data[6];
+
 
     return hardware_interface::return_type::OK;
 }
