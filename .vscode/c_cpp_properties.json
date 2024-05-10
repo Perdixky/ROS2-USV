@@ -6,11 +6,12 @@
                 "${workspaceFolder}/**",
                 "/opt/ros/humble/include/**",
                 "/opt/ros/humble/include/rclcpp",
-                "/home/cat/USV_ws/install/usv_controller/include/usv_controller_parameter",
+                "/home/perdixky/USV_ws/install/usv_controller/include/usv_controller_parameter",
                 "/opt/ros/humble/include/nav_msgs",
                 "/opt/ros/humble/include/rcl",
                 "/opt/ros/humble/include/std_msgs",
-                "/opt/ros/humble/include/realtime_tools"
+                "/opt/ros/humble/include/realtime_tools",
+                "/opt/ros/humble/include/std_srvs"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

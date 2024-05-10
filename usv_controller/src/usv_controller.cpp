@@ -164,19 +164,23 @@ controller_interface::return_type USVController::update(const rclcpp::Time& time
     std::shared_ptr<nav_msgs::msg::Odometry> odometry;
     odometry_msg_ptr_box_.get(odometry);
 
-    if(handles_.teleop_handles[2].get().get_value() > 0)
+    if(handles_.teleop_handles[2].get().get_value() > 90)
     {
+        auto sigmoid = [](int x) -> double{  // 将-50 ~ 150夹到0 ~ 100
+            return 1 / (1 + std::exp(-0.02 * (x - 50)));
+        };
         double speed_difference = params_.steering_sensitivity * handles_.teleop_handles[1].get().get_value();
-        handles_.motor_speed_handles[0].get().set_value(handles_.teleop_handles[0].get().get_value() + speed_difference - 50);
-        handles_.motor_speed_handles[1].get().set_value(handles_.teleop_handles[0].get().get_value() + speed_difference - 50);
+        handles_.motor_speed_handles[0].get().set_value(sigmoid(handles_.teleop_handles[0].get().get_value() + speed_difference - 50));  // 0 ~ 100（不包含转弯），-50是因为speed_difference中间值是50
+        handles_.motor_speed_handles[1].get().set_value(sigmoid(handles_.teleop_handles[0].get().get_value() + speed_difference - 50));
     }
     else{
-        if (!odometry){
+        /*if (!odometry){
             return controller_interface::return_type::ERROR;
         }
         double speed_difference = *(params_.pid.begin()) * (twist_message.angular.z - odometry->twist.twist.angular.z);
         handles_.motor_speed_handles[0].get().set_value(twist_message.linear.x - speed_difference);
-        handles_.motor_speed_handles[1].get().set_value(twist_message.linear.x + speed_difference);
+        handles_.motor_speed_handles[1].get().set_value(twist_message.linear.x + speed_difference);*/
+        RCLCPP_INFO(this->get_node()->get_logger(), "请拉低SWD开关！！！");
     }
     return controller_interface::return_type::OK;
     

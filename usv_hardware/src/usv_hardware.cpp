@@ -25,7 +25,8 @@
 
 #include "usv_hardware.hpp"
 #include <ncurses.h>
-
+#include "std_srvs/srv/trigger.hpp"
+#undef OK
 /*
  * \brief 初始化父类和基节点
  */
@@ -59,7 +60,7 @@ hardware_interface::CallbackReturn USVHardware::on_configure(const rclcpp_lifecy
     realtime_publisher_ = std::make_shared<realtime_tools::RealtimePublisher<std_msgs::msg::Float64MultiArray>>(_);
 
     this->node_->create_service<std_srvs::srv::Trigger>(
-        "alignment_service", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+        "alignment_service", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
         std::shared_ptr<std_srvs::srv::Trigger::Response> response){  // 一个15s倒计时
             while(!realtime_publisher_->trylock()) { 
                 std::this_thread::sleep_for(std::chrono::milliseconds(1)); // 稍作等待再重试
