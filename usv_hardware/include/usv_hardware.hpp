@@ -69,7 +69,7 @@ private:
     simple::Imu imu_msg_;  // sensor_msgs::msg::Imu类型的数据，存储IMU的存储
     simple::Odometry odometry_msg_;  // sensor_msgs::msg::MagneticFeild类型数据，存储磁力计数据
     simple::Teleop teleop_msg_;
-    std::vector<double> motor_speeds_{ std::nan("1") };   // 电机的转动速度（相对值，-100~100）
+    std::vector<double> motor_speeds_{ .0, .0 };   // 电机的转动速度（相对值，0 ~ 100），必须初始化两个数，否则没有相应的地址
 
 
     realtime_tools::RealtimeBox<std_msgs::msg::Float64MultiArray::SharedPtr> msg_ptr_box;  // 无锁，双重缓冲

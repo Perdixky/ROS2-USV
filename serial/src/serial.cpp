@@ -63,7 +63,7 @@ private:
     {
         std_msgs::msg::Float64MultiArray msgs;
         std::string data = ros_serial.read(ros_serial.available());
-        RCLCPP_INFO(this->get_logger(), "接收到的数据：%s", data.c_str());
+        // RCLCPP_INFO(this->get_logger(), "接收到的数据：%s", data.c_str());
         ros_serial.flushInput();
         auto pos = data.find('\n');
         if (pos + 12 <= data.size() && pos != std::string::npos)  // 检查是否没有\n或者是否pos后没有12个数据
@@ -73,7 +73,7 @@ private:
             short origin_accelerate_x = *reinterpret_cast<const short*>(data.data() + 3);
             short origin_accelerate_y = *reinterpret_cast<const short*>(data.data() + 5);
             float angle = *reinterpret_cast<const float*>(data.data() + 7);
-            RCLCPP_INFO(this->get_logger(), "%d %d %d", static_cast<int>(data[11]), static_cast<int>(data[12]), static_cast<int>(data[13]));
+            // RCLCPP_INFO(this->get_logger(), "%d %d %d", static_cast<int>(data[11]), static_cast<int>(data[12]), static_cast<int>(data[13]));
 
             // 将提取的数据转换为目标格式并存储
             msgs.data.emplace_back(static_cast<double>(origin_angular_speed_z) * 1.3316e-5);  // angular_speed_z，50°/65535->rad/s
@@ -93,8 +93,8 @@ private:
     void subscription_callback(std_msgs::msg::Float64MultiArray::SharedPtr msgs)
     {
         std::string buffer{ };
-        buffer += static_cast<unsigned char>((*msgs->data.begin()) * 100);
-        buffer += static_cast<unsigned char>((*msgs->data.end()) * 100);
+        buffer += static_cast<unsigned char>(msgs->data[0]);
+        buffer += static_cast<unsigned char>(msgs->data[1]);
         ros_serial.write(buffer);
     }
 };

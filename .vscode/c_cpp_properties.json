@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "/opt/ros/humble/include/**",
                 "/opt/ros/humble/include/rclcpp",
-                "/home/perdixky/USV_ws/install/usv_controller/include/usv_controller_parameter",
+                "/home/cat/USV_ws/install/usv_controller/include/usv_controller_parameter",
                 "/opt/ros/humble/include/nav_msgs",
                 "/opt/ros/humble/include/rcl",
                 "/opt/ros/humble/include/std_msgs",

@@ -26,7 +26,7 @@
 #include "usv_hardware.hpp"
 #include <ncurses.h>
 #include "std_srvs/srv/trigger.hpp"
-#undef OK
+#undef OK  // OK被宏污染了
 /*
  * \brief 初始化父类和基节点
  */
@@ -197,7 +197,6 @@ hardware_interface::return_type USVHardware::read(const rclcpp::Time &, const rc
     teleop_msg_.angular_speed = msg_buffer_ptr->data[5];
     teleop_msg_.is_teleoperated = msg_buffer_ptr->data[6];
 
-
     return hardware_interface::return_type::OK;
 }
 
@@ -211,7 +210,7 @@ hardware_interface::return_type USVHardware::write(const rclcpp::Time &, const r
         realtime_publisher_->msg_.data = motor_speeds_;
         realtime_publisher_->unlockAndPublish();
     }
-    RCLCPP_DEBUG(this->node_->get_logger(), "motor_speed:%lf, %lf", motor_speeds_[0], motor_speeds_[1]);
+    RCLCPP_DEBUG(this->node_->get_logger(), "motor_speed: %lf, %lf", motor_speeds_[0], motor_speeds_[1]);
 
     return hardware_interface::return_type::OK;  // motor_speeds是惯性数据，发送失败也可以返回OK
 }
